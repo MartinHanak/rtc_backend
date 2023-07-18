@@ -1,7 +1,9 @@
 import express, { Application } from "express";
+import cors from "cors";
 require('express-async-errors');
 import { Server as SocketIOServer } from "socket.io";
 import { createServer, Server as HTTPServer } from "http";
+import { FRONTEND_URL } from "./util/config";
 
 
 export class Server {
@@ -20,8 +22,15 @@ export class Server {
 
     private initialize() {
         this.app = express();
+        this.app.use(cors());
+
         this.httpServer = createServer(this.app);
-        this.io = new SocketIOServer(this.httpServer)
+        
+        this.io = new SocketIOServer(this.httpServer, {
+            cors: {
+                origin: `${FRONTEND_URL}`
+            }
+        })
     }
 
     private handleRoutes(): void {
