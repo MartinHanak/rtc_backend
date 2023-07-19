@@ -28,7 +28,7 @@ export class Server {
         
         this.io = new SocketIOServer(this.httpServer, {
             cors: {
-                origin: `${FRONTEND_URL}`
+                origin: `http://${FRONTEND_URL}`
             }
         })
     }
@@ -41,7 +41,14 @@ export class Server {
 
     private handleSocketConnection(): void {
         this.io.on("connection", socket => {
-            console.log("Socket connected.");
+            let room = socket.handshake.headers.room;
+
+            if (typeof room === 'string' || room instanceof String) {
+                socket.join(room);
+                console.log(`Socket connected to room ${room}.`);
+            } else {
+                console.log(`room ${room} is not a string`);
+            }
         });
     }
 
