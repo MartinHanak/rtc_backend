@@ -43,18 +43,42 @@ export class Server {
         this.io.on("connection", async (socket) => {
             let room = socket.handshake.headers.room;
 
-            if (typeof room === 'string' || room instanceof String) {
+            if (typeof room === 'string') {
                 socket.join(room);
                 console.log(`Socket connected to room ${room}.`);
 
-                let sockets = await this.io.in(room).fetchSockets()
-                let users = sockets.map((socket) => socket.id)
-
-                this.io.to(room).emit("update-user-list", {users: users})
+                await this.updateUserList(room);
+                
             } else {
                 console.log(`room ${room} is not a string`);
             }
+
+            socket.on("disconnect", async (reason) => {
+                let room = socket.handshake.headers.room;
+                console.log(`socket ${socket.id} disconnected`);
+
+                if(typeof room === 'string') {
+                    await this.updateUserList(room);
+                } else {
+                    console.log(`room ${room} is not valid`)
+                }
+                
+            })
+
         });
+    }
+
+    private async updateUserList(room: string) {
+        try {
+            let sockets = await this.io.in(room).fetchSockets();
+
+            let users = sockets.map((socket) => socket.id);
+
+            this.io.to(room).emit("update-user-list", {users: users})
+
+        } catch(error) {
+            console.log(error)
+        }
     }
 
     public listen(callback: (port: number) => void): void {
