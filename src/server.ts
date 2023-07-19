@@ -40,12 +40,17 @@ export class Server {
     }
 
     private handleSocketConnection(): void {
-        this.io.on("connection", socket => {
+        this.io.on("connection", async (socket) => {
             let room = socket.handshake.headers.room;
 
             if (typeof room === 'string' || room instanceof String) {
                 socket.join(room);
                 console.log(`Socket connected to room ${room}.`);
+
+                let sockets = await this.io.in(room).fetchSockets()
+                let users = sockets.map((socket) => socket.id)
+
+                this.io.to(room).emit("update-user-list", {users: users})
             } else {
                 console.log(`room ${room} is not a string`);
             }
