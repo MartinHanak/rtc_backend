@@ -4,7 +4,9 @@ require('express-async-errors');
 import { createServer, Server as HTTPServer } from 'http';
 import { FRONTEND_URL } from "./util/config";
 import { Server as SocketIOServer} from "socket.io"
+import { ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData } from "./types";
 
+const usersPerRoom = 3;
 
 export const app = express();
 
@@ -14,8 +16,9 @@ app.get("/", (req, res) => {
     res.send(`<h1>Hello World</h1>`); 
 });
 
+
 export const httpServer = createServer(app);
-export const io  = new SocketIOServer(httpServer, {
+export const io  = new SocketIOServer<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>(httpServer, {
     cors: {
         origin: `http://${FRONTEND_URL}`
     }
@@ -26,9 +29,13 @@ io.on("connection", async (socket) => {
     let id = socket.id;
 
     if(!(room && typeof room === 'string' && !Array.isArray(room))) {
+        // Socket.io makes socket join rooms identified by socket.id by default
+        // good fallback value
         room = id;
     }
 
+    const rooms = io.of("/").adapter.rooms;
+    // room will be limited to usersPerRoom
     socket.join(room);
 
     socket.on("join", () => {
@@ -68,6 +75,6 @@ io.of("/").adapter.on("join-room", (room, id) => {
     console.log(`socket ${id} has joined room ${room}`);
 });
 
-io.of("/").adapter.on("leave-room", (room,id) => {
+io.of("/").adapter.on("leave-room", (room, id) => {
     console.log(`socket ${id} has left the room ${room}`);
 });
