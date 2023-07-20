@@ -4,7 +4,7 @@ require('express-async-errors');
 import { createServer, Server as HTTPServer } from 'http';
 import { FRONTEND_URL } from "./util/config";
 import { Server as SocketIOServer} from "socket.io"
-import { ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData } from "./types";
+import { ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData, RTCSessionDescriptionInit } from "./types";
 
 const usersPerRoom = 3;
 
@@ -25,7 +25,7 @@ export const io  = new SocketIOServer<ClientToServerEvents, ServerToClientEvents
 });
 
 io.on("connection", async (socket) => {
-    let room = socket.handshake.headers.room;
+    let room = socket.handshake.headers.room as string;
     let id = socket.id;
 
     if(!(room && typeof room === 'string' && !Array.isArray(room))) {
@@ -35,29 +35,48 @@ io.on("connection", async (socket) => {
     }
 
     const rooms = io.of("/").adapter.rooms;
-    // room will be limited to usersPerRoom
-    socket.join(room);
+    if(!rooms.has(room)) {
+        // new room created
+        socket.join(room);
+        socket.emit("created")
+    } else {
+        let existingRoom = rooms.get(room);
 
-    socket.on("join", () => {
-    });
+        if( existingRoom && existingRoom.size <= usersPerRoom ) {
+            // join existing room
+            socket.join(room);
+            socket.emit("joined")
+        } else {
+            // room full
+            socket.emit("full")
+        }
+    }
 
     socket.on("ready", () => {
+        console.log(`Socket ${socket.id} is ready.`)
+        socket.broadcast.to(room).emit("ready");
     });
 
     socket.on("ice-candidate", (candidate) => {
-
+        console.log(`ICE candidate:`);
+        console.log(candidate)
+        socket.broadcast.to(room).emit("ice-candidate", candidate);
     })
 
-    socket.on("offer", (offer) => {
-
+    socket.on("offer", (offer: RTCSessionDescriptionInit) => {
+        console.log(`Offer received`);
+        socket.broadcast.to(room).emit("offer", offer);
     })
 
-    socket.on("answer", () => {
-
+    socket.on("answer", (answer: RTCSessionDescriptionInit) => {
+        console.log(`Answer received`);
+        socket.broadcast.to(room).emit("answer", answer);
     })
 
     socket.on("disconnect", (reason) => {
         // socket is automatically removed from room on disconnect
+        console.log(`Socket disconnected`)
+        socket.broadcast.to(room).emit("leave");
     })
 
 })
