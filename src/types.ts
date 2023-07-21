@@ -6,18 +6,19 @@ export type RTCSessionDescriptionInit = {
 
 
 export interface ServerToClientEvents {
+    // room events, specific for one sockt
     "created": () => void,
     "joined": () => void,
     "full": () => void,
-    "offer": (offer: RTCSessionDescriptionInit) => void,
-    "answer": (answer: RTCSessionDescriptionInit) => void,
-    "ice-candidate": (candidate: any) => void,
+    // webRTC events
+    "offer": (socketId: string, offer: RTCSessionDescriptionInit) => void,
+    "answer": (socketId: string, answer: RTCSessionDescriptionInit) => void,
+    "ice-candidate": (socketId: string, candidate: any) => void,
     "ready": () => void,
     "leave": () => void
 }
 
 export interface ClientToServerEvents {
-    join: () => void,
     offer: (offer: RTCSessionDescriptionInit) => void,
     answer: (answer: RTCSessionDescriptionInit) => void,
     "ice-candidate": (candidate: any ) => void,

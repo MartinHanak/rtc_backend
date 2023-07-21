@@ -60,17 +60,17 @@ io.on("connection", async (socket) => {
     socket.on("ice-candidate", (candidate) => {
         console.log(`ICE candidate:`);
         console.log(candidate)
-        socket.broadcast.to(room).emit("ice-candidate", candidate);
+        socket.broadcast.to(room).emit("ice-candidate", socket.id, candidate);
     })
 
     socket.on("offer", (offer: RTCSessionDescriptionInit) => {
         console.log(`Offer received`);
-        socket.broadcast.to(room).emit("offer", offer);
+        socket.broadcast.to(room).emit("offer", socket.id, offer);
     })
 
     socket.on("answer", (answer: RTCSessionDescriptionInit) => {
         console.log(`Answer received`);
-        socket.broadcast.to(room).emit("answer", answer);
+        socket.broadcast.to(room).emit("answer", socket.id, answer);
     })
 
     socket.on("disconnect", (reason) => {
