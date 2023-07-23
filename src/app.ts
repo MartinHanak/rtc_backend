@@ -52,25 +52,25 @@ io.on("connection", async (socket) => {
         }
     }
 
-    socket.on("ready", () => {
-        console.log(`Socket ${socket.id} is ready.`)
-        socket.broadcast.to(room).emit("ready");
+    socket.on("ready", (fromSocketId) => {
+        console.log(`Socket ${fromSocketId} is ready.`)
+        socket.broadcast.to(room).emit("ready", fromSocketId);
     });
 
-    socket.on("ice-candidate", (candidate) => {
+    socket.on("ice-candidate", (fromSocketId, candidate) => {
         console.log(`ICE candidate:`);
         console.log(candidate)
-        socket.broadcast.to(room).emit("ice-candidate", socket.id, candidate);
+        socket.broadcast.to(room).emit("ice-candidate", fromSocketId, candidate);
     })
 
-    socket.on("offer", (offer: RTCSessionDescriptionInit) => {
+    socket.on("offer", (fromSocketId, offer: RTCSessionDescriptionInit) => {
         console.log(`Offer received`);
-        socket.broadcast.to(room).emit("offer", socket.id, offer);
+        socket.broadcast.to(room).emit("offer", fromSocketId, offer);
     })
 
-    socket.on("answer", (answer: RTCSessionDescriptionInit) => {
+    socket.on("answer", (fromSocketId, answer: RTCSessionDescriptionInit) => {
         console.log(`Answer received`);
-        socket.broadcast.to(room).emit("answer", socket.id, answer);
+        socket.broadcast.to(room).emit("answer", fromSocketId, answer);
     })
 
     socket.on("disconnect", (reason) => {
