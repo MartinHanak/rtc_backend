@@ -16,13 +16,18 @@ export interface ServerToClientEvents {
     "ice-candidate": (fromSocketId: string, candidate: any) => void,
     "ready": (fromSocketId: string, username?:string) => void,
     "leave": () => void
+    // chat
+    "message": (fromSocketId: string, message: string) => void
 }
 
 export interface ClientToServerEvents {
+    // webRTC events
     "offer": (fromSocketId: string, offer: RTCSessionDescriptionInit) => void,
     "answer": (fromSocketId: string, answer: RTCSessionDescriptionInit) => void,
     "ice-candidate": (fromSocketId: string, candidate: any ) => void,
     "ready": (fromSocketId: string, username?:string ) => void,
+    // chat
+    "message": (fromSocketId: string, message: string) => void
 }
 
 export interface InterServerEvents {

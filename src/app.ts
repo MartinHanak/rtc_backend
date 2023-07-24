@@ -79,6 +79,12 @@ io.on("connection", async (socket) => {
         socket.broadcast.to(room).emit("leave");
     })
 
+    socket.on("message", (fromSocketId, message: string) => {
+        // not-broadcasted, sender also receives their own message
+        console.log(`Socket ${fromSocketId} sent a message.`)
+        socket.to(room).emit("message", fromSocketId, message);
+    });
+
 })
 
 // room events provided by Socket.io
