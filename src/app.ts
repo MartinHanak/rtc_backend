@@ -17,6 +17,8 @@ app.get("/", (req, res) => {
 });
 
 
+const roomHost = new Map<string,string>();
+
 export const httpServer = createServer(app);
 export const io  = new SocketIOServer<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>(httpServer, {
     cors: {
@@ -38,14 +40,20 @@ io.on("connection", async (socket) => {
     if(!rooms.has(room)) {
         // new room created
         socket.join(room);
-        socket.emit("created")
+        roomHost.set(room, socket.id);
+        socket.emit("created", roomHost.get(room) || '');
     } else {
         let existingRoom = rooms.get(room);
 
         if( existingRoom && existingRoom.size <= usersPerRoom ) {
             // join existing room
+            let hostId = roomHost.get(room);
+            if(!hostId) {
+                console.log(`Room ${existingRoom} has no hostId when room joined.`)
+                hostId = '';
+            }
             socket.join(room);
-            socket.emit("joined")
+            socket.emit("joined", hostId)
         } else {
             // room full
             socket.emit("full")
@@ -76,13 +84,17 @@ io.on("connection", async (socket) => {
     socket.on("disconnect", (reason) => {
         // socket is automatically removed from room on disconnect
         console.log(`Socket disconnected`)
-        socket.broadcast.to(room).emit("leave");
+    })
+
+    socket.on("leave", (fromSocketId: string) => {
+        console.log(`Socket left room, emitted "leave"`);
+        socket.broadcast.to(room).emit("leave", fromSocketId)
     })
 
     socket.on("message", (fromSocketId, message: string) => {
         // not-broadcasted, sender also receives their own message
         console.log(`Socket ${fromSocketId} sent a message.`)
-        socket.to(room).emit("message", fromSocketId, message);
+        io.to(room).emit("message", fromSocketId, message);
     });
 
 })
